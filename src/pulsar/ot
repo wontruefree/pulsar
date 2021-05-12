@@ -1,0 +1,41 @@
+require "./event"
+
+class Pulsar::Graph
+  def initialize
+    @root = Node.new(:root)
+  end
+
+  def add(*args, &block : Event ->)
+    @root.add(args.to_a, payload: block)
+  end
+end
+
+class Pulsar::Node
+  getter name : Symbol
+
+  # getter payload : Array(Event -> Nil)
+  # getter childern : Array(Node)
+
+  def initialize(name : Symbol, payload : Event -> _ | Nil)
+    @name = name
+    @payload = Array(Event ->).new(payload)
+    @childern = Array(Node).new
+  end
+
+  def add(args, payload : Event ->)
+    if 0 == args.size
+      @payload << payload
+    else
+      new_name = args.pop
+      if found_node = @childern.find { |node| node.name == new_name }
+        puts "FOUND #{self.name} #{@childern.map(&.name)} : #{new_name}"
+        return found_node.add(args, payload: payload)
+      else
+        puts "NOT FOUND #{self.name} #{@childern.map(&.name)} : #{new_name}"
+        new_node = Node.new(new_name)
+        @childern << new_node
+        new_node.add(args, payload: payload)
+      end
+    end
+  end
+end
